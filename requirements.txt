@@ -1,5 +1,6 @@
 Flask
+gunicorn
 pandas
 matplotlib
 pdfplumber
-gunicorn
+PyPDF2==3.0.1
