@@ -3,7 +3,7 @@
 <html lang="it">
 <head>
     <meta charset="utf-8">
-    <title>StatMaster Online - Carica timbrature</title>
+    <title>StatMaster Online - Carica Orari</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -26,7 +26,7 @@
             <label for="weekly_hours">Ore settimanali da contratto:</label>
             <input type="number" step="0.5" id="weekly_hours" name="weekly_hours" placeholder="Es. 20" required>
 
-            <label for="pdf_file">PDF delle timbrature:</label>
+            <label for="pdf_file">PDF degli orari:</label>
             <input type="file" name="pdf_file" id="pdf_file" accept="application/pdf" required>
 
             <button type="submit">Genera report StatMaster</button>
@@ -43,7 +43,7 @@
                 <ol>
                     <li>Inserisci il <strong>nome della dipendente</strong> (es. “Frumento Fabio”).</li>
                     <li>Inserisci le <strong>ore settimanali da contratto</strong> (es. 20).</li>
-                    <li>Clicca su <strong>“Scegli file”</strong> e carica il <strong>PDF delle timbrature</strong>.</li>
+                    <li>Clicca su <strong>“Scegli file”</strong> e carica il <strong>PDF degli orari</strong>.</li>
                     <li>Premi il pulsante <strong>“Genera report StatMaster”</strong>.</li>
                     <li>Nella pagina successiva clicca su <strong>“Scarica il report PDF”</strong> per ottenere il file multipagina.</li>
                 </ol>
