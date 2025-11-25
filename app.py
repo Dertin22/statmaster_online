@@ -32,66 +32,81 @@ def allowed_file(filename: str) -> bool:
 # -------------------------
 @app.route("/", methods=["GET", "POST"])
 def index():
-    """Pagina principale: analisi di un solo dipendente."""
     if request.method == "POST":
         employee_name = request.form.get("employee_name", "").strip()
         weekly_hours_str = request.form.get("weekly_hours", "").strip()
+        file = request.files.get("pdf_file")
 
-        if not employee_name:
-            return render_template("index.html", error="Inserisci il nome della dipendente.")
-
-        if not weekly_hours_str:
-            return render_template("index.html", error="Inserisci le ore settimanali di contratto.")
+        # Controlli base
+        if not employee_name or not weekly_hours_str or not file:
+            return render_template(
+                "index.html",
+                error="Compila tutti i campi e carica un PDF.",
+                employee_name=employee_name,
+                weekly_hours=weekly_hours_str,
+            )
 
         try:
             weekly_hours = float(weekly_hours_str.replace(",", "."))
         except ValueError:
             return render_template(
                 "index.html",
-                error="Le ore settimanali devono essere un numero (es. 20 o 15.5)."
+                error="Le ore settimanali devono essere un numero.",
+                employee_name=employee_name,
+                weekly_hours=weekly_hours_str,
             )
 
-        if "pdf_file" not in request.files:
-            return render_template("index.html", error="Nessun file ricevuto.")
+        filename = secure_filename(file.filename)
+        upload_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        file.save(upload_path)
 
-        file = request.files["pdf_file"]
+        try:
+            # 1) parsing timbrature
+            df = parse_pdf_to_dataframe(upload_path)
 
-        if file.filename == "":
-            return render_template("index.html", error="Nessun file selezionato.")
+            # 2) statistiche mensili + riepilogo
+            summary, monthly_df = compute_monthly_stats(df, weekly_hours)
 
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            save_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-            file.save(save_path)
-
-            try:
-                report_filename, summary = analyze_pdf(
-                    pdf_path=save_path,
-                    employee_name=employee_name,
-                    weekly_hours=weekly_hours,
-                    report_folder=app.config["REPORT_FOLDER"],
-                )
-            except Exception as e:
-                return render_template(
-                    "index.html",
-                    error=f"Errore durante l'analisi del PDF: {e}"
-                )
-
-            download_url = url_for("download_report", filename=report_filename)
-
-            return render_template(
-                "success.html",
+            # 3) generazione report PDF
+            report_filename = generate_full_report(
                 employee_name=employee_name,
                 weekly_hours=weekly_hours,
+                df=df,
+                monthly_df=monthly_df,
                 summary=summary,
-                download_url=download_url,
-                report_filename=report_filename,
+                output_dir=app.config["REPORT_FOLDER"],
             )
 
-        return render_template("index.html", error="Per favore carica un file PDF (.pdf) valido.")
+        except ValueError as e:
+            # errori "attesi": problemi nel PDF, formato non riconosciuto, ecc.
+            return render_template(
+                "index.html",
+                error=f"Errore durante l'analisi del PDF: {e}",
+                employee_name=employee_name,
+                weekly_hours=weekly_hours_str,
+            )
+        except Exception as e:
+            # qualunque altra cosa (non deve più mandare giù Gunicorn)
+            return render_template(
+                "index.html",
+                error=f"Errore imprevisto durante l'elaborazione del PDF: {e}",
+                employee_name=employee_name,
+                weekly_hours=weekly_hours_str,
+            )
+
+        download_url = url_for("download_report", filename=report_filename)
+        return render_template(
+            "success.html",
+            employee_name=employee_name,
+            weekly_hours=weekly_hours,
+            summary=summary,
+            download_url=download_url,
+            report_filename=report_filename,
+        )
 
     # GET
     return render_template("index.html")
+
 
 
 # -------------------------
