@@ -1,0 +1,65 @@
+
+<!doctype html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <title>StatMaster Online - Carica timbrature</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="logo-box">
+            <img src="{{ url_for('static', filename='logo_cama.jpeg') }}" alt="Logo azienda">
+        </div>
+
+        <h1>StatMaster Online</h1>
+        <p class="subtitle">Carica il PDF delle ore lavorate, indica il contratto orario e genera il report completo.</p>
+
+        {% if error %}
+            <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" class="upload-form">
+            <label for="employee_name">Nome dipendente:</label>
+            <input type="text" id="employee_name" name="employee_name" placeholder="Es. Frumento Fabio" required>
+
+            <label for="weekly_hours">Ore settimanali da contratto:</label>
+            <input type="number" step="0.5" id="weekly_hours" name="weekly_hours" placeholder="Es. 20" required>
+
+            <label for="pdf_file">PDF delle timbrature:</label>
+            <input type="file" name="pdf_file" id="pdf_file" accept="application/pdf" required>
+
+            <button type="submit">Genera report StatMaster</button>
+        </form>
+         <div class="compare-link">
+            <a href="{{ url_for('compare') }}" class="button-secondary button-full">
+                Confronta 2 dipendenti
+            </a>
+        </div>
+
+                <details class="instructions-box">
+            <summary>ℹ︎ Istruzioni</summary>
+            <div class="instructions-content">
+                <ol>
+                    <li>Inserisci il <strong>nome della dipendente</strong> (es. “Frumento Fabio”).</li>
+                    <li>Inserisci le <strong>ore settimanali da contratto</strong> (es. 20).</li>
+                    <li>Clicca su <strong>“Scegli file”</strong> e carica il <strong>PDF delle timbrature</strong>.</li>
+                    <li>Premi il pulsante <strong>“Genera report StatMaster”</strong>.</li>
+                    <li>Nella pagina successiva clicca su <strong>“Scarica il report PDF”</strong> per ottenere il file multipagina.</li>
+                </ol>
+                <p>
+                    Per il <strong>confronto tra 2 dipendenti</strong> usa il pulsante
+                    <strong>“Confronta 2 dipendenti”</strong> e carica i due PDF con i rispettivi dati di contratto.
+                </p>
+            </div>
+        </details>
+
+
+        <p class="footer">
+            Versione 1.0.<br>
+            <strong>StatMaster Online powered by Frumento Fabio</strong>
+    
+        </p>
+    </div>
+</body>
+</html>

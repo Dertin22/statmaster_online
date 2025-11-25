@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <title>StatMaster Online - Confronto dipendenti</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="logo-box">
+            <img src="{{ url_for('static', filename='logo_cama.png') }}" alt="Logo azienda">
+        </div>
+
+        <h1>Confronto dipendenti</h1>
+        <p class="subtitle">Risultati StatMaster per {{ employee1_name }} e {{ employee2_name }}.</p>
+
+        <div class="compare-grid">
+            <div class="summary-box">
+                <h2>{{ employee1_name }}</h2>
+                <p><strong>Periodo:</strong> {{ summary1.period_label }}</p>
+                <p><strong>Ore settimanali:</strong> {{ weekly_hours1 }} h</p>
+                <p><strong>Ore lavorate:</strong> {{ '%.2f'|format(summary1.total_hours_worked) }} h</p>
+                <p><strong>Ore teoriche:</strong> {{ '%.2f'|format(summary1.total_theoretical_hours) }} h</p>
+                <p><strong>Straordinario netto:</strong> {{ '%.2f'|format(summary1.total_overtime) }} h</p>
+                <p><strong>Media ore/mese:</strong> {{ '%.2f'|format(summary1.avg_monthly_hours) }} h</p>
+            </div>
+
+            <div class="summary-box">
+                <h2>{{ employee2_name }}</h2>
+                <p><strong>Periodo:</strong> {{ summary2.period_label }}</p>
+                <p><strong>Ore settimanali:</strong> {{ weekly_hours2 }} h</p>
+                <p><strong>Ore lavorate:</strong> {{ '%.2f'|format(summary2.total_hours_worked) }} h</p>
+                <p><strong>Ore teoriche:</strong> {{ '%.2f'|format(summary2.total_theoretical_hours) }} h</p>
+                <p><strong>Straordinario netto:</strong> {{ '%.2f'|format(summary2.total_overtime) }} h</p>
+                <p><strong>Media ore/mese:</strong> {{ '%.2f'|format(summary2.avg_monthly_hours) }} h</p>
+            </div>
+        </div>
+
+        <a href="{{ comparison_download_url }}" class="button-link button-full">
+            ⬇︎ Scarica il report di confronto ({{ comparison_filename }})
+        </a>
+
+        <div class="compare-link">
+            <a href="{{ url_for('compare') }}" class="button-secondary button-full">
+                ↺ Confronta altri dipendenti
+            </a>
+        </div>
+
+        <p class="footer">
+            <strong>StatMaster powered by Frumento Fabio</strong>
+        </p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,36 @@
+
+<!doctype html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <title>StatMaster Online - Report generato</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="logo-box">
+            <img src="{{ url_for('static', filename='logo_cama.jpeg') }}" alt="Logo azienda">
+        </div>
+
+        <h1>Report generato ✅</h1>
+        <p class="subtitle">StatMaster ha analizzato le timbrature.</p>
+
+        <div class="summary-box">
+            <h2>{{ employee_name }}</h2>
+            <p><strong>Periodo analizzato:</strong> {{ summary.period_label }}</p>
+            <p><strong>Ore settimanali da contratto:</strong> {{ weekly_hours }} h</p>
+            <p><strong>Totale ore lavorate:</strong> {{ '%.2f'|format(summary.total_hours_worked) }} h</p>
+            <p><strong>Totale ore teoriche:</strong> {{ '%.2f'|format(summary.total_theoretical_hours) }} h</p>
+            <p><strong>Straordinario netto complessivo:</strong> {{ '%.2f'|format(summary.total_overtime) }} h</p>
+            <p><strong>Media ore lavorate al mese:</strong> {{ '%.2f'|format(summary.avg_monthly_hours) }} h</p>
+        </div>
+
+        <a href="{{ download_url }}" class="button-link">⬇︎ Scarica il report PDF ({{ report_filename }})</a>
+        <a href="{{ url_for('index') }}" class="button-secondary">⬅︎ Analizza un nuovo PDF</a>
+
+        <p class="footer">
+            <strong>StatMaster powered by Frumento Fabio</strong>
+        </p>
+    </div>
+</body>
+</html>

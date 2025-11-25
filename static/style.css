@@ -1,0 +1,229 @@
+
+body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 0;
+    color: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+
+    /* Sfondo a tema pulizie/logistica */
+     background:
+        radial-gradient(circle at top, rgba(15, 23, 42, 0.3), rgba(15, 23, 42, 0.7)),
+        url("/static/bg_pulizie.png");
+    /* sia il gradiente che l'immagine riempiono tutto lo schermo */
+    background-size: cover, cover;
+    background-position: center, center;
+    background-repeat: no-repeat, no-repeat;
+    background-attachment: fixed;
+
+
+}
+
+
+.logo-box {
+    display: flex;
+    justify-content: center;
+    margin-top: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.logo-box img {
+    max-height: 80px;      /* logo un po' più grande */
+    width: auto;
+    display: block;
+    object-fit: contain;   /* mostra tutto il logo senza tagliarlo */
+    /* border-radius: 9999px; */  /* se vuoi il cerchio, riattiva questa riga */
+}
+
+
+
+.container {
+    background: rgba(2, 6, 23, 0.75); /* scuro ma leggermente trasparente */
+    padding: 2rem 2.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    max-width: 540px;
+    width: 90%;
+    backdrop-filter: blur(10px); /* effetto vetro dove supportato */
+}
+
+
+
+h1 {
+    margin-top: 0;
+    font-size: 1.9rem;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+h2 {
+    margin-top: 0;
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    color: #9ca3af;
+}
+
+.upload-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+label {
+    font-weight: 500;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="file"] {
+    background: #020617;
+    border: 1px solid #1f2937;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    color: #e5e7eb;
+}
+
+input::placeholder {
+    color: #6b7280;
+}
+
+button,
+.button-link,
+.button-secondary {
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+button,
+.button-link {
+    background: #22c55e;
+    color: #022c22;
+}
+
+button:hover,
+.button-link:hover {
+    background: #16a34a;
+}
+
+.button-secondary {
+    background: transparent;
+    border: 1px solid #4b5563;
+    color: #e5e7eb;
+    margin-left: 0.5rem;
+}
+
+.button-secondary:hover {
+    background: #111827;
+}
+
+.alert-error {
+    background: #7f1d1d;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.footer {
+    margin-top: 1.5rem;
+    font-size: 0.8rem;
+    color: #6b7280;
+    text-align: center;
+}
+
+.summary-box {
+    background: #020617;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid #1f2937;
+    margin-bottom: 1.25rem;
+}
+
+.summary-box p {
+    margin: 0.15rem 0;
+    font-size: 0.95rem;
+}
+.compare-link {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.button-full {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.divider {
+    border: none;
+    border-top: 1px solid #1f2937;
+    margin: 1.5rem 0;
+}
+
+/* Griglia confronto dipendenti nella pagina risultati */
+.compare-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Su schermi larghi, affianca le due box */
+@media (min-width: 800px) {
+    .compare-grid {
+        flex-direction: row;
+    }
+    .compare-grid .summary-box {
+        flex: 1;
+    }
+}
+
+.instructions-box {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+/* fa sembrare il summary un bottoncino */
+.instructions-box summary {
+    list-style: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 9999px;
+    background: rgba(148, 163, 184, 0.18);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    user-select: none;
+}
+
+.instructions-box summary::marker {
+    display: none; /* toglie la freccetta standard, quando supportato */
+}
+
+.instructions-box[open] summary {
+    background: rgba(148, 163, 184, 0.28);
+}
+
+.instructions-content {
+    margin-top: 0.6rem;
+    padding: 0.75rem 0.9rem;
+    background: rgba(15, 23, 42, 0.80);
+    border-radius: 0.75rem;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+}

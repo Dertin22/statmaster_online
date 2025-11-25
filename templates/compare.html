@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <title>StatMaster Online - Confronta due dipendenti</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="logo-box">
+            <img src="{{ url_for('static', filename='logo_cama.jpeg') }}" alt="Logo azienda">
+        </div>
+
+        <h1>Confronta due dipendenti</h1>
+        <p class="subtitle">Carica i PDF delle timbrature di due dipendenti e confronta le loro statistiche.</p>
+
+        {% if error %}
+            <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" class="upload-form">
+            <h2>Dipendente 1</h2>
+
+            <label for="employee1_name">Nome dipendente 1:</label>
+            <input type="text" id="employee1_name" name="employee1_name" placeholder="Es. Frumento Fabio" required>
+
+            <label for="weekly_hours1">Ore settimanali da contratto (1):</label>
+            <input type="number" step="0.5" id="weekly_hours1" name="weekly_hours1" placeholder="Es. 20" required>
+
+            <label for="pdf_file1">PDF timbrature dipendente 1:</label>
+            <input type="file" name="pdf_file1" id="pdf_file1" accept="application/pdf" required>
+
+            <hr class="divider">
+
+            <h2>Dipendente 2</h2>
+
+            <label for="employee2_name">Nome dipendente 2:</label>
+            <input type="text" id="employee2_name" name="employee2_name" placeholder="Es. Testa Alessandro" required>
+
+            <label for="weekly_hours2">Ore settimanali da contratto (2):</label>
+            <input type="number" step="0.5" id="weekly_hours2" name="weekly_hours2" placeholder="Es. 15" required>
+
+            <label for="pdf_file2">PDF timbrature dipendente 2:</label>
+            <input type="file" name="pdf_file2" id="pdf_file2" accept="application/pdf" required>
+
+            <button type="submit">Genera confronto StatMaster</button>
+        </form>
+
+        <div class="compare-link">
+            <a href="{{ url_for('index') }}" class="button-secondary button-full">
+                ⬅︎ Torna al report singolo
+            </a>
+        </div>
+
+        <p class="footer">
+            <strong>StatMaster powered by Frumento Fabio</strong>
+        </p>
+    </div>
+</body>
+</html>
