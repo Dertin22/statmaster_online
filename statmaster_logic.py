@@ -15,7 +15,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 
 
-MAX_PAGES = 50  # limite di sicurezza per i PDF troppo lunghi
+MAX_PAGES = 80  # limite di sicurezza per i PDF troppo lunghi
 
 def extract_text_from_pdf(pdf_path: str) -> str:
     """
