@@ -1,4 +1,3 @@
-
 import os
 import re
 import calendar
@@ -7,22 +6,35 @@ from typing import Tuple, Dict
 
 import pdfplumber
 import pandas as pd
-
 import matplotlib
-matplotlib.use("Agg")          # <--- AGGIUNGI QUESTE DUE RIGHE
-
+matplotlib.use("Agg")          # <-- aggiungi questa riga
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
 
 
+
 def extract_text_from_pdf(pdf_path: str) -> str:
-    """Estrae il testo da tutte le pagine del PDF."""
+    """Estrae il testo da tutte le pagine del PDF, con gestione errori per il server."""
     texts = []
-    with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
-            page_text = page.extract_text() or ''
-            texts.append(page_text)
+    try:
+        with pdfplumber.open(pdf_path) as pdf:
+            for page in pdf.pages:
+                page_text = page.extract_text() or ''
+                texts.append(page_text)
+    except Exception as e:
+        # Qualsiasi problema di pdfplumber/pdfminer lo trasformiamo
+        # in un ValueError gestibile da Flask.
+        raise ValueError(
+            f"Errore nella lettura del PDF (formato non supportato o PDF danneggiato): {e}"
+        ) from e
+
+    if not texts:
+        raise ValueError(
+            "Il PDF non contiene testo leggibile. "
+            "Se è una scansione, serve un PDF con testo (non solo immagine)."
+        )
+
     return '\n'.join(texts)
 
 
