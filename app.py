@@ -2,7 +2,12 @@ import os
 from flask import Flask, render_template, request, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 
-from statmaster_logic import analyze_pdf, analyze_two_pdfs_comparison
+from statmaster_logic import (
+    parse_pdf_to_dataframe,
+    compute_monthly_stats,
+    generate_full_report,
+    generate_comparison_report,
+)
 
 
 # Configurazione base Flask
