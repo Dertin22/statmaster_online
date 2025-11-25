@@ -15,18 +15,27 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 
 def extract_text_from_pdf(pdf_path: str) -> str:
-    """Estrae il testo da tutte le pagine del PDF, con gestione errori per il server."""
+    """
+    Estrae il testo da tutte le pagine del PDF, con gestione robusta degli errori
+    per evitare che pdfminer faccia crashare il worker (SystemExit).
+    """
     texts = []
     try:
+        import pdfplumber  # se non è già importato sopra, lascialo qui
+
         with pdfplumber.open(pdf_path) as pdf:
             for page in pdf.pages:
-                page_text = page.extract_text() or ''
+                page_text = page.extract_text() or ""
                 texts.append(page_text)
-    except Exception as e:
-        # Qualsiasi problema di pdfplumber/pdfminer lo trasformiamo
-        # in un ValueError gestibile da Flask.
+    except SystemExit as e:
+        # pdfminer a volte chiama sys.exit(1) → SystemExit: lo trasformiamo in errore gestibile
         raise ValueError(
-            f"Errore nella lettura del PDF (formato non supportato o PDF danneggiato): {e}"
+            "Errore nella lettura del PDF (formato non supportato o PDF danneggiato)."
+        ) from e
+    except Exception as e:
+        # Qualsiasi altro problema nella lettura del PDF
+        raise ValueError(
+            f"Errore nella lettura del PDF: {e}"
         ) from e
 
     if not texts:
@@ -35,7 +44,8 @@ def extract_text_from_pdf(pdf_path: str) -> str:
             "Se è una scansione, serve un PDF con testo (non solo immagine)."
         )
 
-    return '\n'.join(texts)
+    return "\n".join(texts)
+
 
 
 def parse_pdf_to_dataframe(pdf_path: str) -> pd.DataFrame:
