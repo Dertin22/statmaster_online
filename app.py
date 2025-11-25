@@ -70,12 +70,15 @@ def index():
 
         try:
             # Funzione di alto livello: fa parsing, calcoli e genera il report PDF
-            summary, monthly_df, report_filename = analyze_pdf(
+            report_filename, summary = analyze_pdf(
                 pdf_path=upload_path,
                 employee_name=employee_name,
                 weekly_hours=weekly_hours,
                 report_folder=app.config["REPORT_FOLDER"],
             )
+
+
+
 
         except ValueError as e:
             # Errori “previsti” (PDF non leggibile, nessuna timbratura, ecc.)
