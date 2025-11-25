@@ -4,6 +4,7 @@ import calendar
 from datetime import datetime, time, timedelta
 from typing import Tuple, Dict
 
+import PyPDF2
 import pdfplumber
 import pandas as pd
 import matplotlib
@@ -18,17 +19,16 @@ MAX_PAGES = 15  # limite di sicurezza per i PDF troppo lunghi
 
 def extract_text_from_pdf(pdf_path: str) -> str:
     """
-    Estrae il testo da tutte le pagine del PDF, con gestione robusta degli errori
-    e un limite massimo di pagine per evitare timeout su Render.
+    Estrae il testo da tutte le pagine del PDF usando PyPDF2.
+    Limitiamo il numero di pagine per evitare timeout su Render.
     """
-    import pdfplumber
-
     texts = []
     try:
-        with pdfplumber.open(pdf_path) as pdf:
-            num_pages = len(pdf.pages)
+        with open(pdf_path, "rb") as f:
+            reader = PyPDF2.PdfReader(f)
+            num_pages = len(reader.pages)
 
-            # 1) Limite di pagine per evitare che il parsing duri 30+ secondi
+            # Limite di sicurezza per PDF enormi (Render free ha risorse ridotte)
             if num_pages > MAX_PAGES:
                 raise ValueError(
                     f"Il PDF ha {num_pages} pagine. "
@@ -37,29 +37,25 @@ def extract_text_from_pdf(pdf_path: str) -> str:
                     "Prova a esportare un periodo più corto (ad es. solo alcuni mesi)."
                 )
 
-            # 2) Estrazione testo pagina per pagina
-            for page in pdf.pages:
+            for page in reader.pages:
                 page_text = page.extract_text() or ""
                 texts.append(page_text)
 
-    except SystemExit as e:
-        # pdfminer a volte chiama sys.exit(1) → SystemExit: lo trasformiamo in errore gestibile
+    except Exception as e:
+        # Qualsiasi problema di lettura del file o del contenuto del PDF
         raise ValueError(
             "Errore nella lettura del PDF (formato non supportato o PDF danneggiato)."
         ) from e
-    except Exception as e:
-        # Qualsiasi altro problema nella lettura del PDF
-        raise ValueError(f"Errore nella lettura del PDF: {e}") from e
 
-    if not texts:
+    full_text = "\n".join(texts)
+
+    if not full_text.strip():
         raise ValueError(
             "Il PDF non contiene testo leggibile. "
             "Se è una scansione, serve un PDF con testo (non solo immagine)."
         )
 
-    return "\n".join(texts)
-
-
+    return full_text
 
 
 def parse_pdf_to_dataframe(pdf_path: str) -> pd.DataFrame:
