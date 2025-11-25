@@ -14,19 +14,34 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 
 
+MAX_PAGES = 15  # limite di sicurezza per i PDF troppo lunghi
+
 def extract_text_from_pdf(pdf_path: str) -> str:
     """
     Estrae il testo da tutte le pagine del PDF, con gestione robusta degli errori
-    per evitare che pdfminer faccia crashare il worker (SystemExit).
+    e un limite massimo di pagine per evitare timeout su Render.
     """
+    import pdfplumber
+
     texts = []
     try:
-        import pdfplumber  # se non è già importato sopra, lascialo qui
-
         with pdfplumber.open(pdf_path) as pdf:
+            num_pages = len(pdf.pages)
+
+            # 1) Limite di pagine per evitare che il parsing duri 30+ secondi
+            if num_pages > MAX_PAGES:
+                raise ValueError(
+                    f"Il PDF ha {num_pages} pagine. "
+                    f"StatMaster Online per ora supporta al massimo {MAX_PAGES} pagine "
+                    "per evitare rallentamenti sul server. "
+                    "Prova a esportare un periodo più corto (ad es. solo alcuni mesi)."
+                )
+
+            # 2) Estrazione testo pagina per pagina
             for page in pdf.pages:
                 page_text = page.extract_text() or ""
                 texts.append(page_text)
+
     except SystemExit as e:
         # pdfminer a volte chiama sys.exit(1) → SystemExit: lo trasformiamo in errore gestibile
         raise ValueError(
@@ -34,9 +49,7 @@ def extract_text_from_pdf(pdf_path: str) -> str:
         ) from e
     except Exception as e:
         # Qualsiasi altro problema nella lettura del PDF
-        raise ValueError(
-            f"Errore nella lettura del PDF: {e}"
-        ) from e
+        raise ValueError(f"Errore nella lettura del PDF: {e}") from e
 
     if not texts:
         raise ValueError(
@@ -45,6 +58,7 @@ def extract_text_from_pdf(pdf_path: str) -> str:
         )
 
     return "\n".join(texts)
+
 
 
 
