@@ -2,19 +2,19 @@ import os
 from flask import Flask, render_template, request, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 
+# Usiamo SOLO le funzioni di alto livello del modulo di logica
 from statmaster_logic import (
-    parse_pdf_to_dataframe,
-    compute_monthly_stats,
-    generate_full_report,
-    generate_comparison_report,
+    analyze_pdf,
+    analyze_two_pdfs_comparison,
 )
 
-
-# Configurazione base Flask
+# -------------------------------------------------
+# CONFIGURAZIONE BASE FLASK
+# -------------------------------------------------
 app = Flask(__name__)
 
-# Cartelle per PDF caricati e report
-BASE_DIR = os.path.dirname(__file__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 REPORT_FOLDER = os.path.join(BASE_DIR, "reports")
 
@@ -23,18 +23,12 @@ os.makedirs(REPORT_FOLDER, exist_ok=True)
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["REPORT_FOLDER"] = REPORT_FOLDER
-
-ALLOWED_EXTENSIONS = {"pdf"}
-
-
-def allowed_file(filename: str) -> bool:
-    """Controlla se il file ha un'estensione ammessa (solo .pdf)."""
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # max 16 MB per file
 
 
-# -------------------------
-#   ROUTE: SINGOLO REPORT
-# -------------------------
+# -------------------------------------------------
+# ROUTE: HOME / SINGOLO DIPENDENTE
+# -------------------------------------------------
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -42,7 +36,7 @@ def index():
         weekly_hours_str = request.form.get("weekly_hours", "").strip()
         file = request.files.get("pdf_file")
 
-        # Controlli base
+        # Controlli base sui campi del form
         if not employee_name or not weekly_hours_str or not file:
             return render_template(
                 "index.html",
@@ -56,34 +50,35 @@ def index():
         except ValueError:
             return render_template(
                 "index.html",
-                error="Le ore settimanali devono essere un numero.",
+                error="Le ore settimanali devono essere un numero (es. 20).",
                 employee_name=employee_name,
                 weekly_hours=weekly_hours_str,
             )
 
-        filename = secure_filename(file.filename)
+        filename = secure_filename(file.filename or "")
+        if not filename.lower().endswith(".pdf"):
+            return render_template(
+                "index.html",
+                error="Carica solo file in formato PDF (.pdf).",
+                employee_name=employee_name,
+                weekly_hours=weekly_hours_str,
+            )
+
+        # Salvo il PDF caricato
         upload_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
         file.save(upload_path)
 
         try:
-            # 1) parsing timbrature
-            df = parse_pdf_to_dataframe(upload_path)
-
-            # 2) statistiche mensili + riepilogo
-            summary, monthly_df = compute_monthly_stats(df, weekly_hours)
-
-            # 3) generazione report PDF
-            report_filename = generate_full_report(
+            # Funzione di alto livello: fa parsing, calcoli e genera il report PDF
+            summary, monthly_df, report_filename = analyze_pdf(
+                pdf_path=upload_path,
                 employee_name=employee_name,
                 weekly_hours=weekly_hours,
-                df=df,
-                monthly_df=monthly_df,
-                summary=summary,
-                output_dir=app.config["REPORT_FOLDER"],
+                report_folder=app.config["REPORT_FOLDER"],
             )
 
         except ValueError as e:
-            # errori "attesi": problemi nel PDF, formato non riconosciuto, ecc.
+            # Errori “previsti” (PDF non leggibile, nessuna timbratura, ecc.)
             return render_template(
                 "index.html",
                 error=f"Errore durante l'analisi del PDF: {e}",
@@ -91,7 +86,7 @@ def index():
                 weekly_hours=weekly_hours_str,
             )
         except Exception as e:
-            # qualunque altra cosa (non deve più mandare giù Gunicorn)
+            # Qualsiasi altro errore: messaggio generico ma leggibile
             return render_template(
                 "index.html",
                 error=f"Errore imprevisto durante l'elaborazione del PDF: {e}",
@@ -100,6 +95,7 @@ def index():
             )
 
         download_url = url_for("download_report", filename=report_filename)
+
         return render_template(
             "success.html",
             employee_name=employee_name,
@@ -109,108 +105,124 @@ def index():
             report_filename=report_filename,
         )
 
-    # GET
+    # GET: mostro la pagina vuota
     return render_template("index.html")
 
 
-
-# -------------------------
-#   ROUTE: CONFRONTO 2 DIPENDENTI
-# -------------------------
+# -------------------------------------------------
+# ROUTE: CONFRONTO 2 DIPENDENTI
+# -------------------------------------------------
 @app.route("/compare", methods=["GET", "POST"])
 def compare():
-    """Pagina per confrontare due dipendenti con un unico report PDF di confronto."""
+    """
+    Pagina per confrontare due dipendenti con un unico report PDF di confronto.
+    """
     if request.method == "POST":
-        # Dipendente 1
-        name1 = request.form.get("employee1_name", "").strip()
-        h1_str = request.form.get("weekly_hours1", "").strip()
+        # Campi dipendente 1
+        employee1_name = request.form.get("employee1_name", "").strip()
+        weekly_hours1_str = request.form.get("weekly_hours1", "").strip()
+        file1 = request.files.get("pdf_file1")
 
-        # Dipendente 2
-        name2 = request.form.get("employee2_name", "").strip()
-        h2_str = request.form.get("weekly_hours2", "").strip()
+        # Campi dipendente 2
+        employee2_name = request.form.get("employee2_name", "").strip()
+        weekly_hours2_str = request.form.get("weekly_hours2", "").strip()
+        file2 = request.files.get("pdf_file2")
 
-        if not name1 or not name2:
-            return render_template("compare.html", error="Inserisci il nome di entrambi i dipendenti.")
-
-        if not h1_str or not h2_str:
+        # Controlli base
+        if (
+            not employee1_name
+            or not weekly_hours1_str
+            or not file1
+            or not employee2_name
+            or not weekly_hours2_str
+            or not file2
+        ):
             return render_template(
                 "compare.html",
-                error="Inserisci le ore settimanali di contratto per entrambi i dipendenti."
+                error="Compila tutti i campi e carica i due PDF.",
             )
 
         try:
-            weekly_hours1 = float(h1_str.replace(",", "."))
-            weekly_hours2 = float(h2_str.replace(",", "."))
+            weekly_hours1 = float(weekly_hours1_str.replace(",", "."))
+            weekly_hours2 = float(weekly_hours2_str.replace(",", "."))
         except ValueError:
             return render_template(
                 "compare.html",
-                error="Le ore settimanali devono essere numeri (es. 20 o 15.5)."
+                error="Le ore settimanali devono essere numeriche (es. 20 e 15).",
             )
 
-        files = request.files
-        if "pdf_file1" not in files or "pdf_file2" not in files:
-            return render_template("compare.html", error="Carica i PDF per entrambi i dipendenti.")
+        filename1 = secure_filename(file1.filename or "")
+        filename2 = secure_filename(file2.filename or "")
 
-        f1 = files["pdf_file1"]
-        f2 = files["pdf_file2"]
+        if not filename1.lower().endswith(".pdf") or not filename2.lower().endswith(".pdf"):
+            return render_template(
+                "compare.html",
+                error="Carica solo file in formato PDF (.pdf) per entrambi i dipendenti.",
+            )
 
-        if f1.filename == "" or f2.filename == "":
-            return render_template("compare.html", error="Seleziona entrambi i file PDF.")
-
-        if not (allowed_file(f1.filename) and allowed_file(f2.filename)):
-            return render_template("compare.html", error="Carica solo file PDF (.pdf).")
-
-        filename1 = "1_" + secure_filename(f1.filename)
-        filename2 = "2_" + secure_filename(f2.filename)
-        path1 = os.path.join(app.config["UPLOAD_FOLDER"], filename1)
-        path2 = os.path.join(app.config["UPLOAD_FOLDER"], filename2)
-        f1.save(path1)
-        f2.save(path2)
+        # Salvo i due PDF
+        path1 = os.path.join(app.config["UPLOAD_FOLDER"], "1_" + filename1)
+        path2 = os.path.join(app.config["UPLOAD_FOLDER"], "2_" + filename2)
+        file1.save(path1)
+        file2.save(path2)
 
         try:
+            # Funzione di alto livello che genera il report di confronto
             comparison_filename, summary1, summary2 = analyze_two_pdfs_comparison(
                 pdf1_path=path1,
-                employee1_name=name1,
+                employee1_name=employee1_name,
                 weekly_hours1=weekly_hours1,
                 pdf2_path=path2,
-                employee2_name=name2,
+                employee2_name=employee2_name,
                 weekly_hours2=weekly_hours2,
                 report_folder=app.config["REPORT_FOLDER"],
+            )
+
+        except ValueError as e:
+            return render_template(
+                "compare.html",
+                error=f"Errore durante l'analisi dei PDF: {e}",
             )
         except Exception as e:
             return render_template(
                 "compare.html",
-                error=f"Errore durante l'analisi dei PDF: {e}"
+                error=f"Errore imprevisto durante l'elaborazione dei PDF: {e}",
             )
 
-        comparison_download_url = url_for("download_report", filename=comparison_filename)
+        download_url = url_for("download_report", filename=comparison_filename)
 
         return render_template(
             "compare_result.html",
-            employee1_name=name1,
-            employee2_name=name2,
+            employee1_name=employee1_name,
+            employee2_name=employee2_name,
             weekly_hours1=weekly_hours1,
             weekly_hours2=weekly_hours2,
             summary1=summary1,
             summary2=summary2,
-            comparison_download_url=comparison_download_url,
-            comparison_filename=comparison_filename,
+            download_url=download_url,
+            report_filename=comparison_filename,
         )
 
     # GET
     return render_template("compare.html")
 
 
-
-# -------------------------
-#   DOWNLOAD REPORT
-# -------------------------
+# -------------------------------------------------
+# ROUTE: DOWNLOAD REPORT
+# -------------------------------------------------
 @app.route("/download/<path:filename>")
 def download_report(filename):
     """Permette di scaricare il report PDF generato da StatMaster."""
-    return send_from_directory(app.config["REPORT_FOLDER"], filename, as_attachment=True)
+    return send_from_directory(
+        app.config["REPORT_FOLDER"],
+        filename,
+        as_attachment=True,
+    )
 
 
+# -------------------------------------------------
+# AVVIO LOCALE (sviluppo)
+# -------------------------------------------------
 if __name__ == "__main__":
     # Avvia il server in locale su http://127.0.0.1:5000
     app.run(debug=False)
